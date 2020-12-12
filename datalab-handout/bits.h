@@ -1,0 +1,27 @@
+
+int tmin();
+int test_tmin();
+int isTmax(int);
+int test_isTmax(int);
+int negate(int);
+int test_negate(int);
+int isLessOrEqual(int, int);
+int test_isLessOrEqual(int, int);
+int bitAnd(int, int);
+int test_bitAnd(int, int);
+int oddBits();
+int test_oddBits();
+int allOddBits();
+int test_allOddBits();
+int byteSwap(int, int, int);
+int test_byteSwap(int, int, int);
+int rotateRight(int, int);
+int test_rotateRight(int, int);
+int bitReverse(int);
+int test_bitReverse(int);
+unsigned floatAbsVal(unsigned);
+unsigned test_floatAbsVal(unsigned);
+unsigned floatInt2Float(int);
+unsigned test_floatInt2Float(int);
+unsigned floatScale2(unsigned);
+unsigned test_floatScale2(unsigned);
