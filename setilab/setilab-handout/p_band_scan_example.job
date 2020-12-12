@@ -1,0 +1,5 @@
+emails: 
+infiles: p_band_scan alien_msg.sig
+outfiles: 
+command: ./p_band_scan mmap alien_msg.sig 400000 4 200 200 200
+

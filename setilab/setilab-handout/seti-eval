@@ -1,0 +1,133 @@
+#!/usr/bin/perl
+
+###############################################################
+# seti-eval.pl - send a binary off to the server for evaluation
+# Kyle C. Hale 2014
+# Taken from Bomblab, R. Bryant and D. O'Hallaron
+##############################################################
+
+use strict 'vars';
+use Getopt::Std;
+
+use POSIX;
+use Socket;
+use Time::Local;
+
+my $evald_port  = 15314;
+my $server_name = "murphy.wot.eecs.northwestern.edu";
+
+# Generic settings
+$| = 1;      # Autoflush output on every print statement
+
+my $netid;
+my $keyfile;
+my $teamname;
+my $soln;
+my $i;
+my $a;
+
+
+# Parse and check the command line arguments
+no strict 'vars';
+getopts('ht:n:k:s:a:');
+
+if ($opt_h) {
+    usage();
+}
+
+# Check for required arguments
+if (!($netid = $opt_n)) {
+    usage("Required argument (-n) misssing");
+}
+
+if (!($soln = $opt_s)) {
+    usage("Required argument (-s) missing");
+}
+
+if (!($teamname = $opt_t)) {
+    usage("Required argument (-t) missing");
+}
+
+if (!($keyfile = $opt_k)) {
+    usage("Required argument (-k) missing");
+}
+
+if (not defined ($a= $opt_a)) {
+    usage("Required argument (-a) missing");
+}
+
+use strict 'vars';
+
+# get the key from the keyfile
+open(KEYFILE, $keyfile) 
+    or die "ERROR: Couldn't open keyfile $keyfile :: $!\n";
+
+my $key = <KEYFILE>;
+defined($key) or die "ERROR: Couldn't read keyfile\n";
+chomp($key);
+close KEYFILE;
+
+# construct a query string for the server
+my $query = "netid=$netid&key=$key&alien=$a&team=$teamname&\n";
+
+my $sock;
+socket($sock, PF_INET, SOCK_STREAM, getprotobyname('tcp'))
+    or die "seti-eval could not create socket: $!\n";
+
+my $iaddr = inet_aton($server_name)
+    or die "seti-eval couldn't get address of server: $!\n";
+
+my $paddr = sockaddr_in($evald_port, $iaddr);
+
+connect($sock, $paddr)
+    or die "seti-eval couldn't connect to server: $!\n";
+
+select($sock); $| = 1; select(STDOUT);
+
+print $sock $query;
+
+my $resp = <$sock>;
+chomp($resp);
+
+unless ($resp =~ /OK/) {
+    die "ERROR submitting data to server: $resp\n";
+}
+
+open(PROG, "$soln")
+    or die "ERROR: Could not open file $soln: $!\n";
+
+binmode(PROG, ":raw");
+binmode($sock, ":raw");
+my $buf;
+my $bytes;
+while ($bytes = sysread(PROG, $buf, POSIX::BUFSIZ)) {
+    syswrite($sock, $buf, $bytes);
+}
+
+close $sock;
+close PROG;
+
+print "Solution sent to server\n";
+
+exit(0);
+
+
+# usage - Print help message and terminate
+sub usage 
+{
+    my $msg = shift;
+    
+    if ($msg ne "") {
+		printf STDERR "$0: Error: $msg\n";
+    }
+    printf STDERR "Usage: $0 [-h] -t <teamname> -n <netid1_netid2> -k <keyfile> -s <solution> -a <sig #>\n";
+    printf STDERR "Options:\n";
+    printf STDERR "  -t <teamname>  The team name that will appear on the SETI dashboard page (required)\n";
+    printf STDERR "  -h             Print this message\n";
+    printf STDERR "  -n <netid>     Your concatenated netids (for example, netid1_netid2) (required)\n";
+    printf STDERR "  -k <keyfile>   The secret key that is provided by siggen (required)\n";
+    printf STDERR "  -s <soln>      This is your binary p_band_scan program (required)\n";
+    printf STDERR "  -a <alien id>  This is to identify which signal contains the alien  (required)\n";
+    printf STDERR "                 e.g. if the alien message is in sig-1.bin, you should use -a 1\n";
+    die "\n";
+}
